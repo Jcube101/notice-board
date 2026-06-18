@@ -1,7 +1,8 @@
 import { pb } from './pocketbase';
 import { shouldArchiveOldest } from './archiving';
 import { validateNote } from './validation';
-import type { ContentFor, Note, NoteType } from './types';
+import { generatePlaceholderName } from './placeholder-names';
+import type { ContentFor, Note, NoteContent, NoteType } from './types';
 
 /**
  * Typed data-access layer for the `notes` collection.
@@ -33,6 +34,11 @@ export async function getNotes(): Promise<Note[]> {
 /**
  * Create a note after validating its content.
  *
+ * If `author_name` is omitted (or blank), a random "Adjective Animal" placeholder
+ * is generated and `name_was_edited` is stored as `false`; when the caller
+ * supplies a name, it is stored as-is with `name_was_edited: true`. The optional
+ * `ip_hash` is kept as a lightweight edit credential (see {@link updateNote}).
+ *
  * Throws if validation fails. After a successful create, applies the archiving
  * policy: if the board is now crowded and its oldest active note is stale, that
  * oldest note is archived automatically (see {@link shouldArchiveOldest}).
@@ -41,26 +47,87 @@ export async function createNote<T extends NoteType>(
   type: T,
   content: ContentFor<T>,
   color: string,
-  author_name: string,
+  author_name?: string,
+  ip_hash?: string,
 ): Promise<Note> {
   const result = validateNote(type, content);
   if (!result.valid) {
     throw new Error(result.error ?? 'Invalid note content.');
   }
 
+  const hasName = typeof author_name === 'string' && author_name.trim().length > 0;
+  const resolvedName = hasName ? author_name! : generatePlaceholderName();
+
   const created = await pb.collection(COLLECTION).create<Note>({
     type,
     content,
     color,
-    author_name,
+    author_name: resolvedName,
+    name_was_edited: hasName,
     archived: false,
     flagged: false,
     ...defaultPosition(),
+    ...(ip_hash ? { ip_hash } : {}),
   });
 
   await archiveOldestIfNeeded();
 
   return created;
+}
+
+/**
+ * Update a note's content and/or author name, gated by the IP-hash credential.
+ *
+ * The caller must pass the `ip_hash` of the requesting client; it must match the
+ * `ip_hash` stored on the note or the update is refused. When `author_name` is
+ * changed, `name_was_edited` is set to `true`. New `content`, if provided, is
+ * validated first.
+ *
+ * @throws Error `'Not authorised to edit this note'` if the hashes don't match.
+ */
+export async function updateNote(
+  id: string,
+  ip_hash: string,
+  updates: { content?: NoteContent; author_name?: string },
+): Promise<Note> {
+  const note = await pb.collection(COLLECTION).getOne<Note>(id);
+
+  if (note.ip_hash !== ip_hash) {
+    throw new Error('Not authorised to edit this note');
+  }
+
+  const data: Record<string, unknown> = {};
+
+  if (updates.content) {
+    const result = validateNote(updates.content.type, updates.content.content);
+    if (!result.valid) {
+      throw new Error(result.error ?? 'Invalid note content.');
+    }
+    data.type = updates.content.type;
+    data.content = updates.content.content;
+  }
+
+  if (updates.author_name !== undefined) {
+    data.author_name = updates.author_name;
+    data.name_was_edited = true;
+  }
+
+  return pb.collection(COLLECTION).update<Note>(id, data);
+}
+
+/**
+ * Fetch the client's public IP from api.ipify.org and return its SHA-256 hash as
+ * a lowercase hex string, computed client-side via the Web Crypto API. The raw
+ * IP is never stored — only this hash is persisted (as `ip_hash`).
+ */
+export async function getClientIpHash(): Promise<string> {
+  const res = await fetch('https://api.ipify.org?format=json');
+  const { ip } = (await res.json()) as { ip: string };
+
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(ip));
+  return Array.from(new Uint8Array(digest))
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('');
 }
 
 /**

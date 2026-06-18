@@ -67,8 +67,18 @@ interface NoteBase {
   position_x: number;
   /** Y coordinate as a percentage (0–100) of the board height. */
   position_y: number;
-  /** Display name of the person who wrote it. */
+  /** Display name of the person who wrote it (a generated placeholder if unset). */
   author_name: string;
+  /**
+   * SHA-256 hash of the author's IP, used as a lightweight edit credential.
+   * The raw IP is never stored. Optional: legacy notes may not have it.
+   */
+  ip_hash?: string;
+  /**
+   * True once the author has changed `author_name` away from the generated
+   * placeholder. Defaults to false.
+   */
+  name_was_edited?: boolean;
   /** Hidden from the main board when true. */
   archived: boolean;
   /** User-marked for follow-up when true. */

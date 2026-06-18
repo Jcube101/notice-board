@@ -92,4 +92,37 @@ localStorage-backed auth store throws `localStorage is not available` on it.
 ### Tests run under jsdom
 
 `vitest.config.ts` sets `environment: 'jsdom'` for the same DOMPurify reason; the
-validation suite (14 cases) covers limits, profanity, and XSS across all 4 types.
+validation suite covers limits, profanity, and XSS across all 4 types.
+
+## Phase 2.x — IP edit permissions & placeholder names
+
+### Adding more fields is the same PATCH dance
+
+`ip_hash` (text, optional) and `name_was_edited` (bool) were added to the live
+collection with `scripts/add-ip-fields.sh` — same flow as the autodate migration
+(auth → GET collection → append to `fields` → PATCH). PocketBase **bool fields
+have no configurable default**; an unset bool simply reads as `false`, which is
+the "default false" the spec wanted, so nothing extra is needed.
+
+### Mocking the PocketBase client in Vitest
+
+`updateNote` hits PocketBase (`getOne` then `update`), so the auth-check tests mock
+the client. `vi.mock` is hoisted above imports, so the spies it references must be
+created with `vi.hoisted(() => ({ getOne: vi.fn(), update: vi.fn() }))` — declaring
+them as plain `const` below the mock factory hits the temporal dead zone. The
+module under test is then pulled in with a post-mock `await import('../notes')`.
+
+### `crypto.subtle` is the Web Crypto entry point
+
+`getClientIpHash` hashes with `crypto.subtle.digest('SHA-256', …)` and hex-encodes
+the resulting `ArrayBuffer` via `Array.from(new Uint8Array(buf)).map(b =>
+b.toString(16).padStart(2,'0')).join('')`. `subtle` is only available on secure
+origins (https / localhost) in the browser; Node 20+ exposes it globally too.
+
+### IP hashing is obfuscation, not auth
+
+Hashing the IP keeps raw IPs out of the DB, but it's weak as an access control:
+IPs are low-entropy (brute-forceable) and shared behind NAT, so two people on the
+same network would share an `ip_hash`. Fine for "edit the note you just made" in a
+prototype; not a real permission system. The API rules remain public, so the check
+is client-side convenience only.

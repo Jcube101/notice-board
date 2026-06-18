@@ -13,7 +13,9 @@ A single PocketBase collection holds every kind of note. The `type` field discri
 | `color`       | text     | no       | Background/accent color (hex or token)                                |
 | `position_x`  | number   | no       | X coordinate as a **percentage** (0–100) of the board width — see below |
 | `position_y`  | number   | no       | Y coordinate as a **percentage** (0–100) of the board height — see below |
-| `author_name` | text     | no       | Display name of the person who wrote it                               |
+| `author_name` | text     | no       | Display name; a generated placeholder when the author didn't set one  |
+| `ip_hash`     | text     | no       | SHA-256 hash of the author's IP, used as an edit credential (see below) |
+| `name_was_edited` | bool | no       | Defaults to `false`; `true` once the author sets a real name          |
 | `archived`    | bool     | no       | Defaults to `false`; hides note from the main board                   |
 | `flagged`     | bool     | no       | Defaults to `false`; user-marked for follow-up                        |
 
@@ -76,6 +78,40 @@ hold (`src/lib/archiving.ts`):
 2. the **oldest** active note is **more than 30 days old** (by `created`).
 
 If either condition is false, nothing is archived.
+
+### Author identity & placeholder names
+
+A note's `author_name` is optional at creation. When it's omitted, `createNote`
+generates a friendly placeholder of the form **"Adjective Animal"** (e.g.
+"Brave Otter") from two curated lists of 20+ words each, giving 500+ combinations
+(`src/lib/placeholder-names.ts`). `name_was_edited` records whether the displayed
+name is a real one (`true`) or a generated placeholder (`false`); it lets the UI
+distinguish "named by a human" from "auto-assigned". Supplying an explicit name at
+creation, or changing it later via `updateNote`, sets `name_was_edited: true`.
+
+### IP hashing (edit credential)
+
+To allow an anonymous author to edit their own note without accounts, the client
+derives a lightweight credential from its IP:
+
+1. `getClientIpHash()` fetches the public IP from `https://api.ipify.org?format=json`.
+2. It hashes the IP with **SHA-256 via the Web Crypto API** (`crypto.subtle`) and
+   returns the lowercase hex digest.
+3. Only this hash is stored as `ip_hash` — **the raw IP is never persisted** or
+   sent to PocketBase.
+
+This is obfuscation, not strong security (IPs are low-entropy and shared behind
+NAT) — appropriate for the prototype's "edit the note you just made" UX, not for
+real authorisation.
+
+### Edit permission model
+
+`updateNote(id, ip_hash, updates)` enforces a simple ownership check: it loads the
+note, compares the caller's `ip_hash` against the stored one, and **throws
+`'Not authorised to edit this note'`** if they differ. On a match it applies
+`updates.content` (validated first) and/or `updates.author_name` (which also sets
+`name_was_edited: true`). Because the API rules are public, this check is
+client-side convenience, not server-enforced — see Access rules below.
 
 ### Access rules
 

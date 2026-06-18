@@ -1,12 +1,26 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { validateNote } from '../validation';
 import type {
   ChecklistContent,
   ChecklistItem,
   HotTakeContent,
+  Note,
   PostItContent,
   RecommendationContent,
 } from '../types';
+
+// Mock the PocketBase client so updateNote's auth logic can be tested without a
+// network call. `vi.hoisted` lets the factory reference these spies safely.
+const { getOne, update } = vi.hoisted(() => ({
+  getOne: vi.fn(),
+  update: vi.fn(),
+}));
+vi.mock('../pocketbase', () => ({
+  pb: { collection: () => ({ getOne, update }) },
+}));
+
+// Imported after the mock is registered.
+const { updateNote } = await import('../notes');
 
 /** A known profanity reliably flagged by `bad-words`. */
 const PROFANITY = 'This is some crappy shit advice';
@@ -126,5 +140,47 @@ describe('validateNote — recommendation', () => {
     const result = validateNote('recommendation', content);
     expect(result.valid).toBe(false);
     expect(result.error).toMatch(/reason exceeds 140 characters/);
+  });
+});
+
+describe('updateNote — ip_hash authorisation', () => {
+  /** A stored note with a known ip_hash credential. */
+  const storedNote = {
+    id: 'note123',
+    type: 'post-it',
+    content: { text: 'original' },
+    ip_hash: 'matching-hash',
+    author_name: 'Brave Otter',
+    name_was_edited: false,
+  } as unknown as Note;
+
+  beforeEach(() => {
+    getOne.mockReset();
+    update.mockReset();
+    getOne.mockResolvedValue(storedNote);
+    update.mockImplementation((id: string, data: Record<string, unknown>) =>
+      Promise.resolve({ ...storedNote, ...data, id }),
+    );
+  });
+
+  it('allows the update when the ip_hash matches', async () => {
+    const result = await updateNote('note123', 'matching-hash', {
+      author_name: 'Real Name',
+    });
+
+    expect(update).toHaveBeenCalledWith('note123', {
+      author_name: 'Real Name',
+      name_was_edited: true,
+    });
+    expect(result.author_name).toBe('Real Name');
+    expect(result.name_was_edited).toBe(true);
+  });
+
+  it('throws and skips the write when the ip_hash does not match', async () => {
+    await expect(
+      updateNote('note123', 'wrong-hash', { author_name: 'Intruder' }),
+    ).rejects.toThrow('Not authorised to edit this note');
+
+    expect(update).not.toHaveBeenCalled();
   });
 });
