@@ -17,7 +17,7 @@ import { JSDOM } from 'jsdom';
 // localStorage-backed auth store works (an opaque `about:blank` origin throws).
 const { window } = new JSDOM('', { url: 'https://pb.job-joseph.com' });
 // DOMPurify (via src/lib/validation.ts) looks up the global `window` on import.
-(globalThis as unknown as { window: Window }).window = window as unknown as Window;
+(globalThis as unknown as { window: unknown }).window = window;
 
 const { pb } = await import('../src/lib/pocketbase.ts');
 const { createNote, archiveNote, updatePosition, getNotes } = await import('../src/lib/notes.ts');
