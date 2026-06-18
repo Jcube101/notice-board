@@ -8,17 +8,17 @@
 - `notes` collection created with the schema documented in [SPEC.md](SPEC.md)
 - API rules set to public (empty strings) for prototype phase
 
-## Phase 2 — Repo and integration layer 🚧 In progress
+## Phase 2 — Repo and integration layer ✅ Complete
 
-- Scaffold repo with documentation
-- Vite + React + TypeScript project initialised
-- Wire up PocketBase JS SDK client (`src/lib/pocketbase.ts`)
-- Type definitions for the four note `content` shapes (`src/lib/types.ts`)
-- Validation: profanity (`bad-words`), XSS (`dompurify`), per-type char limits (`src/lib/validation.ts`)
-- Archiving policy helper (`src/lib/archiving.ts`)
-- Thin, typed data-access layer — list / create / archive / flag / position (`src/lib/notes.ts`)
+- Vite + React + TypeScript scaffold
+- PocketBase JS SDK client (`src/lib/pocketbase.ts`)
+- Typed CRUD data-access layer — list / create / archive / flag / position (`src/lib/notes.ts`)
+- Validation: profanity (`bad-words`), XSS (`dompurify`), per-type character limits (`src/lib/validation.ts`)
+- Archiving logic — auto-archive the oldest note when crowded and stale (`src/lib/archiving.ts`)
+- 14 passing Vitest tests for `validateNote` (`src/lib/__tests__/validation.test.ts`)
+- Seed script that creates one note of each type (`scripts/seed.ts`)
 
-## Phase 3 — Lovable frontend build ⏳ Upcoming
+## Phase 3 — Lovable frontend build 🚧 In progress
 
 - Vite + React + TS + Tailwind + shadcn/ui app
 - Canvas board with drag-positioned notes

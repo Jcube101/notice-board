@@ -17,7 +17,13 @@ A single PocketBase collection holds every kind of note. The `type` field discri
 | `archived`    | bool     | no       | Defaults to `false`; hides note from the main board                   |
 | `flagged`     | bool     | no       | Defaults to `false`; user-marked for follow-up                        |
 
-System fields (`id`, `created`, `updated`) are auto-managed by PocketBase.
+`id` is auto-managed by PocketBase. `created` and `updated` are **`autodate`-type
+fields** — once present, PocketBase maintains them automatically (`created` set on
+insert, `updated` on every write), but they are **not** added implicitly. When a
+collection is created through the REST API they must be declared explicitly; if
+omitted, they simply don't exist. This collection was originally created without
+them and they were added afterwards via `PATCH /api/collections/notes` (see
+`scripts/add-timestamp-fields.sh` and [LEARNINGS.md](LEARNINGS.md)).
 
 ### Coordinate system
 
@@ -88,6 +94,8 @@ the intended schema.
 | `from_note` | relation | yes      | Relation → `notes`; the note the thread starts from |
 | `to_note`   | relation | yes      | Relation → `notes`; the note the thread points to   |
 
-System fields (`id`, `created`, `updated`) are auto-managed by PocketBase. The
-corresponding `Thread` interface already exists in `src/lib/types.ts`
-(`{ id, from_note, to_note }`) ahead of the collection being created.
+`id` is auto-managed by PocketBase; `created` / `updated` are `autodate` fields
+that must be declared explicitly at creation (see the note under the `notes`
+collection above). The corresponding `Thread` interface already exists in
+`src/lib/types.ts` (`{ id, from_note, to_note }`) ahead of the collection being
+created.
