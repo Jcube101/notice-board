@@ -11,9 +11,12 @@
 ## Phase 2 — Repo and integration layer 🚧 In progress
 
 - Scaffold repo with documentation
-- Wire up PocketBase JS SDK client
-- Type definitions for the four note `content` shapes
-- Thin data-access layer (list / create / update / archive / flag)
+- Vite + React + TypeScript project initialised
+- Wire up PocketBase JS SDK client (`src/lib/pocketbase.ts`)
+- Type definitions for the four note `content` shapes (`src/lib/types.ts`)
+- Validation: profanity (`bad-words`), XSS (`dompurify`), per-type char limits (`src/lib/validation.ts`)
+- Archiving policy helper (`src/lib/archiving.ts`)
+- Thin, typed data-access layer — list / create / archive / flag / position (`src/lib/notes.ts`)
 
 ## Phase 3 — Lovable frontend build ⏳ Upcoming
 
@@ -22,3 +25,9 @@
 - Per-type note components (post-it, checklist, hot-take, recommendation)
 - Color picker, archive view, flagged view
 - Author attribution and basic filtering
+
+## Phase 4 — Threads ⏳ Planned
+
+- SVG string connections between notes on the desktop canvas
+- Stored in a `threads` PocketBase collection with `from_note` and `to_note` relation fields
+- Hidden on mobile
