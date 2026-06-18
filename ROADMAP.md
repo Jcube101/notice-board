@@ -18,16 +18,24 @@
 - 14 passing Vitest tests for `validateNote` (`src/lib/__tests__/validation.test.ts`)
 - Seed script that creates one note of each type (`scripts/seed.ts`)
 
-## Phase 3 — Lovable frontend build 🚧 In progress
+## Phase 3 — Lovable frontend build ✅ Complete
 
-- Vite + React + TS + Tailwind + shadcn/ui app
-- Canvas board with drag-positioned notes
-- Per-type note components (post-it, checklist, hot-take, recommendation)
-- Color picker, archive view, flagged view
-- Author attribution and basic filtering
+Built with Lovable, live on job-joseph.com at the `/notice-board` route.
 
-## Phase 4 — Threads ⏳ Planned
+- **Aesthetic** — cork board with CSS texture, dark walnut surround, Caveat handwritten font
+- **Note types** — post-it, checklist, hot-take, recommendation, each rendered per type
+- **Desktop** — free canvas with `@dnd-kit` drag and drop, z-index stacking on drag, `restrictToParentElement` boundary enforcement
+- **Mobile** — masonry grid layout
+- **Add note** — modal with a three-step flow (type → content → color)
+- **Authors** — placeholder author names rendered at 50% opacity
+- **Editing** — IP-hash based edit permissions
+- **Lifecycle** — archive on delete, flag button
+- **Entry point** — contact page post-it button linking to `/notice-board`
+- **Seed** — 8 seed notes spread across the board
 
-- SVG string connections between notes on the desktop canvas
-- Stored in a `threads` PocketBase collection with `from_note` and `to_note` relation fields
+## Phase 4 — Threads 🚧 Next
+
+- Thumbtacks as SVG pins on each note
+- Scarlet thread SVG overlay connecting notes
+- `threads` PocketBase collection with `from_note` and `to_note` relation fields
 - Hidden on mobile

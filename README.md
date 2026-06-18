@@ -8,14 +8,38 @@ A digital corkboard for capturing notes, checklists, hot takes, and recommendati
 - **Frontend**: React + Vite + TypeScript
 - **Styling**: Tailwind CSS + [shadcn/ui](https://ui.shadcn.com)
 
+## Live
+
+**[job-joseph.com/notice-board](https://job-joseph.com/notice-board)**
+
 ## Project status
 
 - **Phase 1 — PocketBase setup ✅ Complete** — `notes` collection live on a self-hosted instance.
 - **Phase 2 — Integration layer ✅ Complete** — Vite + React + TS scaffold, PocketBase client, typed CRUD, validation, archiving logic, 14 passing tests, seed script.
-- **Phase 3 — Frontend build 🚧 In progress.**
-- **Phase 4 — Threads ⏳ Planned.**
+- **Phase 3 — Frontend build ✅ Complete** — Lovable cork-board UI live at `/notice-board`.
+- **Phase 4 — Threads 🚧 Next.**
 
 See [ROADMAP.md](ROADMAP.md) for the full breakdown.
+
+## Features
+
+- **Four note types** — post-it, checklist, hot-take, recommendation
+- **Drag-and-drop canvas** on desktop (free positioning, boundary-enforced)
+- **Masonry layout** on mobile
+- **IP-based edit permissions** — edit the note you created without an account
+- **Profanity and XSS protection** on every write
+- **30-day rolling archive** with a 10-note minimum floor
+- **Real-time PocketBase backend** self-hosted on a Raspberry Pi
+
+## Stack
+
+- **[PocketBase](https://pocketbase.io)** — self-hosted on a Raspberry Pi
+- **React + Vite + TypeScript**
+- **Tailwind CSS** + **[shadcn/ui](https://ui.shadcn.com)**
+- **[@dnd-kit](https://dndkit.com)** — drag and drop
+- **[bad-words](https://www.npmjs.com/package/bad-words)** — profanity filtering
+- **[dompurify](https://github.com/cure53/DOMPurify)** — XSS sanitization
+- **Caveat** — handwritten display font (Google Fonts)
 
 ## Backend
 

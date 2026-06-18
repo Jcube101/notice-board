@@ -18,6 +18,25 @@ Prototype phase. Treat the public API rules as a deliberate choice, not an overs
 - **Profanity tests:** `bad-words` does **not** flag `bullshit`. The validation tests use `crappy shit` as a verified trigger; pick a known-listed word if writing new profanity assertions.
 - **New note positions:** `createNote` seeds each new note at a random position between **10–80%** on both axes (`position_x` / `position_y` are percentages), so fresh notes don't perfectly stack.
 - **IP hashing:** `ip_hash` is a **SHA-256 hash of the client IP** (fetched from `api.ipify.org`, hashed client-side via Web Crypto). **Raw IPs are never stored** — only the hash. It's used as a lightweight edit credential in `updateNote`, not as real auth.
+- **Re-seeding:** seed notes can be re-run via [scripts/seed.ts](scripts/seed.ts) (`npm run seed`). It **archives** the existing notes before creating new ones — it never hard-deletes.
+
+## Frontend
+
+The UI for this project does **not** live in this repo. It was built with Lovable and lives in the **job-joseph.com** repo:
+
+- `src/lib/noticeboard/` — a mirror of this repo's `src/lib/` modules
+- `src/pages/Noticeboard/` — the React page/components, served at the `/notice-board` route
+
+This repo's `src/lib/` is the source of truth for the data layer. **Any change to a `src/lib/` file here must be manually mirrored** into `src/lib/noticeboard/` in the job-joseph.com repo (the pre-commit hook below reminds you, and [MIGRATION.md](MIGRATION.md) is a copy-paste snapshot to make that easier).
+
+**Note sizing targets** (max-width per type, for visual consistency on the board):
+
+| Note type      | Max width |
+|----------------|-----------|
+| post-it        | 180px     |
+| hot-take       | 180px     |
+| checklist      | 200px     |
+| recommendation | 190px     |
 
 ## Git hooks
 

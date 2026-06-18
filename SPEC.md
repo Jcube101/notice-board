@@ -117,6 +117,39 @@ client-side convenience, not server-enforced — see Access rules below.
 
 All five API rules (`listRule`, `viewRule`, `createRule`, `updateRule`, `deleteRule`) are set to `""` (empty string), meaning the collection is **publicly readable and writable**. This is intentional for the initial prototype; tighten before any public deploy.
 
+## Frontend
+
+The frontend (Lovable, in the job-joseph.com repo, served at `/notice-board`) renders the board with two distinct layouts.
+
+### Layouts
+
+- **Desktop — free canvas.** Notes are **absolutely positioned** using the stored
+  `position_x` / `position_y` **percentage** coordinates (see Coordinate system).
+  Drag and drop is handled by `@dnd-kit`, with `restrictToParentElement` so notes
+  can't be dragged off the board. On drop, the new percentage position is written
+  back via `updatePosition`.
+- **Mobile — masonry.** Positions are ignored; notes flow into a CSS columns
+  layout (`columns: 2`) in **created order** (newest first, matching `getNotes`).
+
+### Note size reference
+
+Target **max-width** per note type, to keep the board visually consistent:
+
+| Note type      | Max width |
+|----------------|-----------|
+| post-it        | 180px     |
+| hot-take       | 180px     |
+| checklist      | 200px     |
+| recommendation | 190px     |
+
+### Z-index model
+
+Stacking order (which note sits on top when notes overlap) is **session-only**: a
+**client-side counter map** assigns an incrementing z-index to a note each time it
+is dragged, so the most recently moved note comes to the front. This is **not
+persisted** to PocketBase — it resets on reload and is intentionally per-session,
+so there is no `z_index` field on the `notes` collection.
+
 ## `threads` collection — planned (Phase 4)
 
 A second collection records "threads": SVG string connections drawn between two

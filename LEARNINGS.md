@@ -126,3 +126,37 @@ IPs are low-entropy (brute-forceable) and shared behind NAT, so two people on th
 same network would share an `ip_hash`. Fine for "edit the note you just made" in a
 prototype; not a real permission system. The API rules remain public, so the check
 is client-side convenience only.
+
+## Phase 3 — Lovable frontend
+
+### Lovable added thumbtack pins unprompted
+
+Lovable generated SVG thumbtack pins on each note without being asked — a welcome
+surprise that fit the cork-board aesthetic, now folded forward into the Phase 4
+plan (pins + scarlet thread overlay).
+
+### `overflow: hidden` on the board is essential
+
+Without `overflow: hidden` on the board container, wide notes **bleed past the
+edges at tablet viewports**. Clipping the container is what keeps the canvas
+looking contained between the mobile and desktop breakpoints.
+
+### Z-index stacking must be a client-side counter, not stored
+
+Bringing the most-recently-dragged note to the front needs an incrementing
+z-index. This is **session-specific**, so it lives in a client-side counter map
+rather than a persisted field — storing it would be meaningless across sessions
+and would add a pointless `z_index` column.
+
+### Percentage positions break at the right/bottom edge for wide notes
+
+Storing positions as percentages keeps notes relative across viewports, but a note
+anchored at e.g. 80% still has real pixel width, so wide notes **overflow at the
+boundary**. The safe-zone cap for new/dragged notes should be **~65%, not 80%** —
+the current `createNote` 10–80% range is too generous for the widest cards and
+should be tightened.
+
+### Caveat loads reliably in Lovable with no manual font setup
+
+The Caveat handwritten font from Google Fonts just works inside Lovable — no manual
+`@font-face`, preload, or config needed.
