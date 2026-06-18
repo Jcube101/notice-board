@@ -19,4 +19,8 @@ Prototype phase. Treat the public API rules as a deliberate choice, not an overs
 - **New note positions:** `createNote` seeds each new note at a random position between **10–80%** on both axes (`position_x` / `position_y` are percentages), so fresh notes don't perfectly stack.
 - **IP hashing:** `ip_hash` is a **SHA-256 hash of the client IP** (fetched from `api.ipify.org`, hashed client-side via Web Crypto). **Raw IPs are never stored** — only the hash. It's used as a lightweight edit credential in `updateNote`, not as real auth.
 
+## Git hooks
+
+- **`pre-commit` sync reminder:** there is a local pre-commit hook at `.git/hooks/pre-commit`. Whenever a commit touches files under `src/lib/`, it prints a warning that those modules are **mirrored in the job-joseph.com repo under `src/lib/noticeboard/`** and then **sleeps 5 seconds** (Ctrl+C to cancel, or wait to proceed). This is expected behaviour — a committed `src/lib/` change pausing for 5s is the hook, not a hang. It lives in `.git/hooks/` so it is **not** version-controlled; recreate it if the repo is re-cloned. Keep the two `src/lib/` copies in sync.
+
 See [README.md](README.md), [SPEC.md](SPEC.md), [ROADMAP.md](ROADMAP.md), [LEARNINGS.md](LEARNINGS.md) for the rest.
