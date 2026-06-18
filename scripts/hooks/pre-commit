@@ -1,0 +1,46 @@
+#!/usr/bin/env bash
+#
+# Pre-commit hook: remind to keep src/lib/ in sync with its mirrors.
+#
+# The modules under src/lib/ are mirrored in two places:
+#   • the job-joseph.com repo, under src/lib/noticeboard/
+#   • MIGRATION.md at this repo's root (a copy-paste snapshot of every file)
+#
+# Whenever a commit touches src/lib/, this hook warns (and pauses 5s) so the
+# copies don't silently drift. It also flags when MIGRATION.md was NOT updated
+# in the same commit. Versioned at scripts/hooks/pre-commit and wired up via
+# `core.hooksPath` (see scripts/install-hooks.sh). Documented in CLAUDE.md.
+#
+set -euo pipefail
+
+# Staged files for this commit (added/copied/modified/renamed), against HEAD if it
+# exists, otherwise against the empty tree (first commit).
+if git rev-parse --verify HEAD >/dev/null 2>&1; then
+  against=HEAD
+else
+  against=$(git hash-object -t tree /dev/null)
+fi
+
+staged=$(git diff --cached --name-only --diff-filter=ACMR "$against")
+
+if printf '%s\n' "$staged" | grep -q '^src/lib/'; then
+  printf '\n'
+  printf '⚠️  SYNC REMINDER: You have modified files in src/lib/.\n'
+  printf '    These files are mirrored in:\n'
+  printf '      • the job-joseph.com repo under src/lib/noticeboard/\n'
+  printf '      • MIGRATION.md at this repo'\''s root\n'
+  printf '    Please make sure all copies stay in sync.\n'
+
+  if ! printf '%s\n' "$staged" | grep -q '^MIGRATION.md$'; then
+    printf '\n'
+    printf '    ❗ MIGRATION.md is NOT part of this commit — it may now be out of date.\n'
+    printf '       Regenerate it so it does not drift from src/lib/.\n'
+  fi
+
+  printf '\n'
+  printf '    Press Ctrl+C to cancel this commit, or wait 5 seconds to proceed.\n'
+  printf '\n'
+  sleep 5
+fi
+
+exit 0
