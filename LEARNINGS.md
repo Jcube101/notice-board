@@ -152,9 +152,9 @@ and would add a pointless `z_index` column.
 
 Storing positions as percentages keeps notes relative across viewports, but a note
 anchored at e.g. 80% still has real pixel width, so wide notes **overflow at the
-boundary**. The safe-zone cap for new/dragged notes should be **~65%, not 80%** —
-the current `createNote` 10–80% range is too generous for the widest cards and
-should be tightened.
+boundary**. The safe-zone cap for new/dragged notes should be **~65%, not 80%**.
+Acted on: `createNote` now caps seeded positions at **10–65%** (was 10–80%), and
+the frontend drag safe-zone in the Lovable repo was tightened to match.
 
 ### Caveat loads reliably in Lovable with no manual font setup
 

@@ -361,10 +361,12 @@ const COLLECTION = 'notes';
 
 /** A freshly created note's default board position (percentage coordinates). */
 function defaultPosition(): { position_x: number; position_y: number } {
-  // Spread new notes around the canvas so they don't perfectly stack.
+  // Spread new notes around the canvas so they don't perfectly stack. Cap the
+  // range at 65% (not higher): notes have real pixel width, so anything anchored
+  // further right/down overflows the board edge at narrower viewports.
   return {
-    position_x: Math.round(10 + Math.random() * 70),
-    position_y: Math.round(10 + Math.random() * 70),
+    position_x: Math.round(10 + Math.random() * 55),
+    position_y: Math.round(10 + Math.random() * 55),
   };
 }
 

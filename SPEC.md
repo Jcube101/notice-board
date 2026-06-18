@@ -34,8 +34,10 @@ pixels. `position_x` is a percentage of the board's width and `position_y` a
 percentage of its height. Storing percentages keeps a note in the same relative
 spot on the board regardless of viewport size, so layouts survive window resizes
 and translate across screen sizes. The frontend converts to/from pixels at render
-and drag time. New notes are seeded at a random position within the 10–80% range
-so they don't perfectly stack.
+and drag time. New notes are seeded at a random position within the **10–65%**
+range so they don't perfectly stack — the upper bound is capped at 65% (rather
+than nearer 100%) because notes have real pixel width and would otherwise overflow
+the right/bottom edge at narrower viewports.
 
 ### Note content — discriminated union
 
