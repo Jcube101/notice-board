@@ -18,6 +18,7 @@ A single PocketBase collection holds every kind of note. The `type` field discri
 | `name_was_edited` | bool | no       | Defaults to `false`; `true` once the author sets a real name          |
 | `archived`    | bool     | no       | Defaults to `false`; hides note from the main board                   |
 | `flagged`     | bool     | no       | Defaults to `false`; user-marked for follow-up                        |
+| `reactions`   | json     | no       | Map of emoji → count, e.g. `{ "👋": 3, "🔥": 1 }`; missing ⇒ empty map |
 
 `id` is auto-managed by PocketBase. `created` and `updated` are **`autodate`-type
 fields** — once present, PocketBase maintains them automatically (`created` set on
@@ -151,3 +152,47 @@ Stacking order (which note sits on top when notes overlap) is **session-only**: 
 is dragged, so the most recently moved note comes to the front. This is **not
 persisted** to PocketBase — it resets on reload and is intentionally per-session,
 so there is no `z_index` field on the `notes` collection.
+
+### Real-time sync
+
+The board subscribes to the `notes` collection over PocketBase's real-time channel
+so changes propagate to every visitor live, with no page refresh.
+
+- **Subscribe on mount** — `pb.collection('notes').subscribe('*', handler)`.
+- **Events handled** — `create` (add the note to local state), `update` (replace
+  it — covers position, reactions, flag, archive), and `delete` (remove it).
+  Notes that become archived are dropped from the active board via the `update`
+  event.
+- **Unsubscribe on unmount** — the effect cleanup must call the returned
+  unsubscribe, or subscriptions (and their handlers) leak on every navigation back
+  to the board.
+
+### Reactions
+
+Each note carries a `reactions` JSON field: a **map of emoji → count** drawn from a
+fixed set of 5 (👋 ❤️ 😂 🔥 💡), e.g. `{ "👋": 3, "🔥": 1 }`. A `null` or missing
+field is treated as the empty map `{}`.
+
+- **One reaction type per IP hash per note**, enforced **client-side** using the
+  same `ip_hash` credential as edits. There is no server-side uniqueness guarantee
+  (the collection is public) — this is convenience, not enforcement.
+- Reacting updates the note's `reactions` map and writes it back; the change rides
+  the existing notes **subscription**, so counts update live for everyone.
+
+### Admin page
+
+A hidden review page for flagged notes.
+
+- **Route** — `/notice-board/admin`. **Not linked from anywhere** on the site;
+  reachable by direct URL only.
+- **Password** — a **hardcoded string comparison inside the admin page component**
+  (same pattern as the locked journal stories on job-joseph.com). No environment
+  variables — `VITE_`-prefixed values are bundled into the client anyway (see
+  LEARNINGS.md), so they'd add no real secrecy.
+- **Session persistence** — on a correct password the page sets a flag in
+  `sessionStorage` (the key is defined in the admin page component) so it isn't
+  re-prompted for the rest of the browser session; a wrong entry triggers a shake
+  animation.
+- **Shows** — all `flagged` notes with content, author, and created date, each with
+  an Archive button. Unflagged notes are never shown; an empty state renders when
+  nothing is flagged.

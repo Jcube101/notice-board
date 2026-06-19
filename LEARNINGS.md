@@ -159,3 +159,35 @@ the frontend drag safe-zone in the Lovable repo was tightened to match.
 
 The Caveat handwritten font from Google Fonts just works inside Lovable — no manual
 `@font-face`, preload, or config needed.
+
+## Phases 4–6 — real-time, reactions, admin
+
+### PocketBase `subscribe` needs a matching `unsubscribe` on unmount
+
+`pb.collection('notes').subscribe(...)` opens a live connection; if the board
+component doesn't **unsubscribe on unmount**, a new subscription accumulates every
+time you navigate back, leaking memory (and duplicating event handlers). Easy to
+miss because it "works" in dev until you navigate around. Return the unsubscribe
+from the effect cleanup.
+
+### `VITE_`-prefixed env vars are baked into the client bundle — not secret
+
+Anything `VITE_*` is inlined into the built JS at build time and shipped to the
+browser, so it is **not** a secret. For a simple admin gate on a personal project,
+a hardcoded password string compared in the component is more honest about the
+threat model (it's obscurity either way) and avoids pretending an env var adds
+security. That's the pattern used here and for the locked journal stories on
+job-joseph.com.
+
+### Lovable's Secrets panel doesn't change that
+
+Lovable exposes a Secrets panel under the Cloud tab, but for **client-side** values
+the `VITE_` bundling still applies — they end up in the bundle regardless. The
+Secrets panel is for server-side use; it doesn't make a client-read value secret.
+
+### Reactions as a JSON map avoid a whole collection
+
+Storing reactions as a `reactions` JSON map (`{ emoji: count }`) directly on the
+`notes` record means **no separate collection, no relations, no extra fetch** — the
+counts ride along with the note and update through the same real-time subscription.
+Keeps the schema flat. Treat a missing/`null` field as `{}`.

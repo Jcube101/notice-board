@@ -33,28 +33,29 @@ Built with Lovable, live on job-joseph.com at the `/notice-board` route.
 - **Entry point** — contact page post-it button linking to `/notice-board`
 - **Seed** — 8 seed notes spread across the board
 
-## Phase 4 — Real-time sync 🚧 Next
+## Phase 4 — Real-time sync ✅ Complete
 
 PocketBase real-time subscription so notes appear and disappear live for all
 visitors without a page refresh.
 
-- Subscribe to the `notes` collection on mount
-- Handle `create`, `update`, and `delete` events to update local state
-- Unsubscribe on component unmount
+- Subscribes to the `notes` collection on mount
+- Handles `create`, `update`, and `delete` events to update local state
+- Unsubscribes on component unmount
 
-## Phase 5 — Reactions ⏳ Planned
+## Phase 5 — Reactions ✅ Complete
 
-Each note gets a small reaction bar with 5 emoji options (👋 ❤️ 😂 🔥 💡).
+Each note has a small reaction bar with 5 emoji options (👋 ❤️ 😂 🔥 💡).
 
-- Reactions stored as a `reactions` JSON field on the `notes` collection — a map of emoji → count
+- Reactions stored as a `reactions` JSON map on the `notes` collection (emoji → count)
 - Any visitor can react; one reaction type per IP hash per note, enforced client-side
 - Reaction counts update in real time via the Phase 4 subscription
 
-## Phase 6 — Admin review page ⏳ Planned
+## Phase 6 — Admin review page ✅ Complete
 
-A hidden route at `/notice-board/admin` behind a daily rotating password.
+A hidden route at `/notice-board/admin`, not linked from anywhere on the site.
 
-- Password is the SHA-256 of a secret seed + the UTC date (same pattern as Hugin)
-- Lists all flagged notes with content, author, created date, and a one-click Archive button
-- Unflagged notes are not shown
-- No login system, no cookies — the password is checked on every visit
+- Hardcoded password gate, with `sessionStorage` session persistence so the
+  password isn't re-prompted within a session, and a shake animation on wrong entry
+- Lists all flagged notes with content, author, and created date, each with an
+  Archive button
+- Unflagged notes are not shown; an empty state is rendered when nothing is flagged

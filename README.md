@@ -14,10 +14,14 @@ A digital corkboard for capturing notes, checklists, hot takes, and recommendati
 
 ## Project status
 
-- **Phase 1 — PocketBase setup ✅ Complete** — `notes` collection live on a self-hosted instance.
-- **Phase 2 — Integration layer ✅ Complete** — Vite + React + TS scaffold, PocketBase client, typed CRUD, validation, archiving logic, 14 passing tests, seed script.
-- **Phase 3 — Frontend build ✅ Complete** — Lovable cork-board UI live at `/notice-board`.
-- **Phase 4 — Real-time sync 🚧 Next.**
+All six phases are complete:
+
+- **Phase 1 — PocketBase setup ✅** — `notes` collection live on a self-hosted instance.
+- **Phase 2 — Integration layer ✅** — Vite + React + TS scaffold, PocketBase client, typed CRUD, validation, archiving logic, 14 passing tests, seed script.
+- **Phase 3 — Frontend build ✅** — Lovable cork-board UI live at `/notice-board`.
+- **Phase 4 — Real-time sync ✅** — live note create/update/delete via PocketBase subscriptions.
+- **Phase 5 — Reactions ✅** — 5-emoji reaction bar per note, IP-hash rate limited, live.
+- **Phase 6 — Admin review page ✅** — hidden flagged-notes review at `/notice-board/admin`.
 
 See [ROADMAP.md](ROADMAP.md) for the full breakdown.
 
@@ -26,9 +30,12 @@ See [ROADMAP.md](ROADMAP.md) for the full breakdown.
 - **Four note types** — post-it, checklist, hot-take, recommendation
 - **Drag-and-drop canvas** on desktop (free positioning, boundary-enforced)
 - **Masonry layout** on mobile
+- **Real-time sync** — live note creation and deletion without a page refresh, via PocketBase subscriptions
+- **Reactions** — 5 emoji reactions per note (👋 ❤️ 😂 🔥 💡), IP-hash rate limited, with live updates
 - **IP-based edit permissions** — edit the note you created without an account
 - **Profanity and XSS protection** on every write
 - **30-day rolling archive** with a 10-note minimum floor
+- **Admin review page** — hidden flagged-notes review page at `/notice-board/admin`, not linked from anywhere on the site
 - **Real-time PocketBase backend** self-hosted on a Raspberry Pi
 
 ## Stack
