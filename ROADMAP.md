@@ -33,9 +33,28 @@ Built with Lovable, live on job-joseph.com at the `/notice-board` route.
 - **Entry point** — contact page post-it button linking to `/notice-board`
 - **Seed** — 8 seed notes spread across the board
 
-## Phase 4 — Threads 🚧 Next
+## Phase 4 — Real-time sync 🚧 Next
 
-- Thumbtacks as SVG pins on each note
-- Scarlet thread SVG overlay connecting notes
-- `threads` PocketBase collection with `from_note` and `to_note` relation fields
-- Hidden on mobile
+PocketBase real-time subscription so notes appear and disappear live for all
+visitors without a page refresh.
+
+- Subscribe to the `notes` collection on mount
+- Handle `create`, `update`, and `delete` events to update local state
+- Unsubscribe on component unmount
+
+## Phase 5 — Reactions ⏳ Planned
+
+Each note gets a small reaction bar with 5 emoji options (👋 ❤️ 😂 🔥 💡).
+
+- Reactions stored as a `reactions` JSON field on the `notes` collection — a map of emoji → count
+- Any visitor can react; one reaction type per IP hash per note, enforced client-side
+- Reaction counts update in real time via the Phase 4 subscription
+
+## Phase 6 — Admin review page ⏳ Planned
+
+A hidden route at `/notice-board/admin` behind a daily rotating password.
+
+- Password is the SHA-256 of a secret seed + the UTC date (same pattern as Hugin)
+- Lists all flagged notes with content, author, created date, and a one-click Archive button
+- Unflagged notes are not shown
+- No login system, no cookies — the password is checked on every visit

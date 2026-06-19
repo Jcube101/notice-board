@@ -151,22 +151,3 @@ Stacking order (which note sits on top when notes overlap) is **session-only**: 
 is dragged, so the most recently moved note comes to the front. This is **not
 persisted** to PocketBase — it resets on reload and is intentionally per-session,
 so there is no `z_index` field on the `notes` collection.
-
-## `threads` collection — planned (Phase 4)
-
-A second collection records "threads": SVG string connections drawn between two
-notes on the desktop canvas (hidden on mobile). It does not exist yet; this is
-the intended schema.
-
-### Fields
-
-| Field       | Type     | Required | Notes                                            |
-|-------------|----------|----------|--------------------------------------------------|
-| `from_note` | relation | yes      | Relation → `notes`; the note the thread starts from |
-| `to_note`   | relation | yes      | Relation → `notes`; the note the thread points to   |
-
-`id` is auto-managed by PocketBase; `created` / `updated` are `autodate` fields
-that must be declared explicitly at creation (see the note under the `notes`
-collection above). The corresponding `Thread` interface already exists in
-`src/lib/types.ts` (`{ id, from_note, to_note }`) ahead of the collection being
-created.

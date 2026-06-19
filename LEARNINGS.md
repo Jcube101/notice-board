@@ -132,8 +132,7 @@ is client-side convenience only.
 ### Lovable added thumbtack pins unprompted
 
 Lovable generated SVG thumbtack pins on each note without being asked — a welcome
-surprise that fit the cork-board aesthetic, now folded forward into the Phase 4
-plan (pins + scarlet thread overlay).
+surprise that fit the cork-board aesthetic.
 
 ### `overflow: hidden` on the board is essential
 

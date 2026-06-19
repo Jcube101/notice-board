@@ -17,7 +17,7 @@ A digital corkboard for capturing notes, checklists, hot takes, and recommendati
 - **Phase 1 — PocketBase setup ✅ Complete** — `notes` collection live on a self-hosted instance.
 - **Phase 2 — Integration layer ✅ Complete** — Vite + React + TS scaffold, PocketBase client, typed CRUD, validation, archiving logic, 14 passing tests, seed script.
 - **Phase 3 — Frontend build ✅ Complete** — Lovable cork-board UI live at `/notice-board`.
-- **Phase 4 — Threads 🚧 Next.**
+- **Phase 4 — Real-time sync 🚧 Next.**
 
 See [ROADMAP.md](ROADMAP.md) for the full breakdown.
 
@@ -52,7 +52,7 @@ See [SPEC.md](SPEC.md) for the data model.
 The typed integration layer that the frontend builds on:
 
 - **`pocketbase.ts`** — initialises and exports the PocketBase JS SDK client pointed at the API. No auth token; the collection is public in the prototype phase.
-- **`types.ts`** — TypeScript types for the data model: the `Note` discriminated union (one `content` shape per note `type`) and the `Thread` interface (Phase 4).
+- **`types.ts`** — TypeScript types for the data model: the `Note` discriminated union (one `content` shape per note `type`).
 - **`validation.ts`** — `validateNote(type, content)` runs a profanity filter (`bad-words`), XSS sanitization (`dompurify`), and per-type character limits, returning `{ valid, error? }`.
 - **`archiving.ts`** — `shouldArchiveOldest(activeCount, oldestCreated)` decides whether the oldest note should be auto-archived (more than 10 active notes **and** the oldest older than 30 days).
 - **`notes.ts`** — the typed async CRUD layer: `getNotes`, `createNote` (validates, then applies the archiving rule), `archiveNote`, `flagNote`, `updatePosition`.
