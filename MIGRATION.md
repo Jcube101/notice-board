@@ -114,19 +114,6 @@ interface NoteBase {
  * shape of `content`, so narrowing on `note.type` narrows `note.content`.
  */
 export type Note = NoteBase & NoteContent;
-
-/**
- * A directed connection between two notes on the board canvas.
- * Planned for Phase 4 (SVG "threads"); stored in a separate `threads`
- * PocketBase collection with relation fields.
- */
-export interface Thread {
-  id: string;
-  /** Relation: id of the note the thread starts from. */
-  from_note: string;
-  /** Relation: id of the note the thread points to. */
-  to_note: string;
-}
 ```
 
 # src/lib/validation.ts
