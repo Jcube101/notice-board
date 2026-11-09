@@ -14,7 +14,6 @@ A single PocketBase collection holds every kind of note. The `type` field discri
 | `position_x`  | number   | no       | X coordinate as a **percentage** (0–100) of the board width — see below |
 | `position_y`  | number   | no       | Y coordinate as a **percentage** (0–100) of the board height — see below |
 | `author_name` | text     | no       | Display name; a generated placeholder when the author didn't set one  |
-| `ip_hash`     | text     | no       | SHA-256 hash of the author's IP, used as an edit credential (see below) |
 | `name_was_edited` | bool | no       | Defaults to `false`; `true` once the author sets a real name          |
 | `archived`    | bool     | no       | Defaults to `false`; hides note from the main board                   |
 | `flagged`     | bool     | no       | Defaults to `false`; user-marked for follow-up                        |
@@ -92,33 +91,60 @@ name is a real one (`true`) or a generated placeholder (`false`); it lets the UI
 distinguish "named by a human" from "auto-assigned". Supplying an explicit name at
 creation, or changing it later via `updateNote`, sets `name_was_edited: true`.
 
-### IP hashing (edit credential)
+### Edit keys
 
-To allow an anonymous author to edit their own note without accounts, the client
-derives a lightweight credential from its IP:
+Until November 2026 the edit credential was `ip_hash`, a SHA-256 hash of the
+author's IP fetched from api.ipify.org. The hashes were publicly readable and an
+IPv4 hash can be reversed in minutes, so the field was deleted and the board no
+longer looks up or stores anything about a visitor's IP. Edit rights now come
+from a random key per note:
 
-1. `getClientIpHash()` fetches the public IP from `https://api.ipify.org?format=json`.
-2. It hashes the IP with **SHA-256 via the Web Crypto API** (`crypto.subtle`) and
-   returns the lowercase hex digest.
-3. Only this hash is stored as `ip_hash` — **the raw IP is never persisted** or
-   sent to PocketBase.
+1. When posting, the browser makes a random 32-byte key (64 hex characters) and
+   picks the note's id itself (15 characters, `a-z0-9`).
+2. It sends the note and a `note_keys` record (`{ note, key }`) in **one batch
+   request** (`POST /api/batch`), which PocketBase runs as a single transaction.
+   Nobody can see the note before its key exists.
+3. The browser keeps the key in localStorage (`noticeboard:edit-keys`) and sends
+   it as an `X-Edit-Key` header to edit or take down the note.
 
-This is obfuscation, not strong security (IPs are low-entropy and shared behind
-NAT) — appropriate for the prototype's "edit the note you just made" UX, not for
-real authorisation.
+A hidden field on `notes` doesn't work for this: PocketBase drops hidden fields
+from non-superuser requests and from `@request.body`, so a visitor's key would
+be stored empty.
 
-### Edit permission model
+### `note_keys` collection
 
-`updateNote(id, ip_hash, updates)` enforces a simple ownership check: it loads the
-note, compares the caller's `ip_hash` against the stored one, and **throws
-`'Not authorised to edit this note'`** if they differ. On a match it applies
-`updates.content` (validated first) and/or `updates.author_name` (which also sets
-`name_was_edited: true`). Because the API rules are public, this check is
-client-side convenience, not server-enforced — see Access rules below.
+| Field     | Type     | Notes                                           |
+|-----------|----------|-------------------------------------------------|
+| `note`    | relation | → `notes`, required, single, cascade delete     |
+| `key`     | text     | required, exactly 64 lowercase hex characters   |
+| `created` | autodate | set on create                                   |
+
+A unique index on `note` allows one key per note. List, view, update and delete
+are superuser-only. Create is allowed only for a note created in the last minute
+that isn't archived:
+
+```
+note.created >= strftime('%Y-%m-%d %H:%M:%fZ', 'now', '-1 minutes') && note.archived = false
+```
 
 ### Access rules
 
-All five API rules (`listRule`, `viewRule`, `createRule`, `updateRule`, `deleteRule`) are set to `""` (empty string), meaning the collection is **publicly readable and writable**. This is intentional for the initial prototype; tighten before any public deploy.
+Locked in November 2026. Moderators sign in with an account in the `moderators`
+auth collection (no public sign-up). Batch requests are enabled, 2 per batch.
+
+- **list / view:** active notes for anyone; archived notes for moderators only.
+- **create:** anyone, as long as the note isn't archived or flagged; moderators
+  can create anything.
+- **update:** anyone can move, react, flag (never unflag) and archive notes
+  older than 30 days. Whoever holds a note's key
+  (`note_keys_via_note.key ?= @request.headers.x_edit_key`) can also edit its
+  content or name and take it down. Moderators can change anything.
+- **delete:** moderators only.
+
+The exact rule strings live in `build_rules()` in
+[`scripts/noticeboard/lockdown.py`](https://github.com/Jcube101/job-joseph/blob/main/scripts/noticeboard/lockdown.py) in the job-joseph repo. Change
+them there, since the script tests them on a throwaway copy before applying
+them. Content checks (profanity, HTML, length) still run only in the browser.
 
 ## Frontend
 
@@ -173,9 +199,10 @@ Each note carries a `reactions` JSON field: a **map of emoji → count** drawn f
 fixed set of 5 (👋 ❤️ 😂 🔥 💡), e.g. `{ "👋": 3, "🔥": 1 }`. A `null` or missing
 field is treated as the empty map `{}`.
 
-- **One reaction type per IP hash per note**, enforced **client-side** using the
-  same `ip_hash` credential as edits. There is no server-side uniqueness guarantee
-  (the collection is public) — this is convenience, not enforcement.
+- **One reaction type per visitor per note**, remembered in the browser's
+  localStorage (`noticeboard:reactions`). There is no server-side uniqueness
+  guarantee: the API rules let anyone change `reactions` — this is convenience,
+  not enforcement.
 - Reacting updates the note's `reactions` map and writes it back; the change rides
   the existing notes **subscription**, so counts update live for everyone.
 
@@ -185,14 +212,13 @@ A hidden review page for flagged notes.
 
 - **Route** — `/notice-board/admin`. **Not linked from anywhere** on the site;
   reachable by direct URL only.
-- **Password** — a **hardcoded string comparison inside the admin page component**
-  (same pattern as the locked journal stories on job-joseph.com). No environment
-  variables — `VITE_`-prefixed values are bundled into the client anyway (see
-  LEARNINGS.md), so they'd add no real secrecy.
-- **Session persistence** — on a correct password the page sets a flag in
-  `sessionStorage` (the key is defined in the admin page component) so it isn't
-  re-prompted for the rest of the browser session; a wrong entry triggers a shake
-  animation.
+- **Login** — email and password for an account in the `moderators` auth
+  collection, checked by PocketBase (`authWithPassword`). Until November 2026 this
+  was a hardcoded password compared in the browser, which shipped in the public
+  JavaScript. The PocketBase SDK keeps the login in localStorage until the
+  moderator signs out; a wrong login shows an error and a shake animation.
+- **Permissions** — the notes API rules give a moderator account full access, so
+  the Archive button works for any note. Visitors can't do any of this.
 - **Shows** — all `flagged` notes with content, author, and created date, each with
   an Archive button. Unflagged notes are never shown; an empty state renders when
   nothing is flagged.

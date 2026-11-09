@@ -1,5 +1,16 @@
 #!/usr/bin/env bash
 #
+# SUPERSEDED (November 2026): don't run this.
+# The live `notes` collection is now managed by scripts/noticeboard/lockdown.py
+# in the job-joseph repo, which locked its API rules, deleted `ip_hash` and
+# moved edit keys into a `note_keys` collection:
+# https://github.com/Jcube101/job-joseph/blob/main/scripts/noticeboard/lockdown.py
+# Running it now would add back the `ip_hash` field that the lockdown deleted.
+# Kept for history only.
+echo "SUPERSEDED: this script is kept for history. Manage the notes collection with" >&2
+echo "scripts/noticeboard/lockdown.py in the job-joseph repo." >&2
+exit 1
+#
 # Migration: add `ip_hash` (text, optional) and `name_was_edited` (bool) fields
 # to the `notes` collection on the live PocketBase.
 #

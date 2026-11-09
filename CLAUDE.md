@@ -6,32 +6,32 @@ Context for Claude Code when working in this repo.
 
 - **PocketBase URL:** https://pb.job-joseph.com
 - **Collection:** `notes` (single collection holds all four note types, discriminated by the `type` field — see [SPEC.md](SPEC.md))
-- **API rules:** all five (`listRule`, `viewRule`, `createRule`, `updateRule`, `deleteRule`) are `""` — the collection is **publicly readable and writable** with no auth required. Frontend can hit the API directly with no token.
+- **API rules:** locked since November 2026 (see [SPEC.md](SPEC.md#access-rules)). Visitors still need no login: anyone can read active notes, post, move, react, flag, and archive notes older than 30 days. Editing or taking down a note needs its edit key, and everything else needs a `moderators` login. The rules, the `note_keys` collection and the `moderators` collection are managed by [`scripts/noticeboard/lockdown.py`](https://github.com/Jcube101/job-joseph/blob/main/scripts/noticeboard/lockdown.py) in the job-joseph repo.
 
 ## Repo intent
 
-Prototype phase. Treat the public API rules as a deliberate choice, not an oversight — do not add auth gates or proxy layers unless explicitly asked.
+The board is live on job-joseph.com. This repo started as the prototype and now holds the docs and history. Its `src/lib/` still has the old IP-hash data layer, which no longer works against the locked rules; the live data layer is `src/lib/noticeboard/` in the job-joseph repo. Don't loosen the API rules without asking.
 
 ## Gotchas worth knowing
 
 - **Autodate fields:** the `notes` collection did not get `created`/`updated` automatically — PocketBase does not add them implicitly when a collection is created via the REST API. They were added explicitly via [scripts/add-timestamp-fields.sh](scripts/add-timestamp-fields.sh). Any new API-created collection needs the same.
 - **Profanity tests:** `bad-words` does **not** flag `bullshit`. The validation tests use `crappy shit` as a verified trigger; pick a known-listed word if writing new profanity assertions.
 - **New note positions:** `createNote` seeds each new note at a random position between **10–65%** on both axes (`position_x` / `position_y` are percentages), so fresh notes don't perfectly stack. The 65% cap (not higher) keeps wide notes from overflowing the board edge at narrower viewports.
-- **IP hashing:** `ip_hash` is a **SHA-256 hash of the client IP** (fetched from `api.ipify.org`, hashed client-side via Web Crypto). **Raw IPs are never stored** — only the hash. It's used as a lightweight edit credential in `updateNote`, not as real auth.
+- **Edit keys, not IP hashes:** the IP-hash credential is gone. Its hashes were publicly readable and an IPv4 hash can be reversed in minutes, so `ip_hash` was deleted and nothing about a visitor's IP is looked up or stored. Each note now has a random edit key, stored in `note_keys` and sent as `X-Edit-Key` (see [SPEC.md](SPEC.md#edit-keys)). PocketBase drops hidden fields from non-superuser requests, so a key can't live in a hidden field on `notes`.
 - **Re-seeding:** seed notes can be re-run via [scripts/seed.ts](scripts/seed.ts) (`npm run seed`). It **archives** the existing notes before creating new ones — it never hard-deletes.
-- **Reactions field:** reactions live as a `reactions` **JSON map** on the `notes` collection, e.g. `{ '👋': 3, '🔥': 1 }` (emoji → count). A `null` or missing `reactions` field must be treated as an **empty map** `{}`, not an error. Like the autodate and `ip_hash` fields, it was **added in a separate patch after the initial schema** — the initial collection creation via curl does not add it automatically (see [scripts/add-reactions-field.sh](scripts/add-reactions-field.sh)).
+- **Reactions field:** reactions live as a `reactions` **JSON map** on the `notes` collection, e.g. `{ '👋': 3, '🔥': 1 }` (emoji → count). A `null` or missing `reactions` field must be treated as an **empty map** `{}`, not an error. Like the autodate fields, it was **added in a separate patch after the initial schema** — the initial collection creation via curl does not add it automatically (see [scripts/add-reactions-field.sh](scripts/add-reactions-field.sh)).
 - **Real-time subscription:** the PocketBase subscription is set up in the board component **on mount** and **must be unsubscribed on unmount** to avoid memory leaks (a new subscription accumulates on every navigation back to the board otherwise).
 - **Admin page route:** the admin page lives at `/notice-board/admin` and is **not linked from anywhere** on the site — access is by direct URL only.
-- **Admin password:** the gate is a **hardcoded string comparison inside the admin page component** (same pattern as the locked journal stories in job-joseph.com). No environment variables are involved — see the LEARNINGS note on why `VITE_`-prefixed vars aren't secret.
+- **Admin login:** the admin page signs in with a PocketBase `moderators` account (email and password). The old hardcoded password comparison is gone, because a password compared in the browser ships in the public JavaScript.
 
 ## Frontend
 
 The UI for this project does **not** live in this repo. It was built with Lovable and lives in the **job-joseph.com** repo:
 
 - `src/lib/noticeboard/` — a mirror of this repo's `src/lib/` modules
-- `src/pages/Noticeboard/` — the React page/components, served at the `/notice-board` route
+- `src/pages/NoticeBoard.tsx` and `src/components/noticeboard/` — the page and components, served at the `/notice-board` route
 
-This repo's `src/lib/` is the source of truth for the data layer. **Any change to a `src/lib/` file here must be manually mirrored** into `src/lib/noticeboard/` in the job-joseph.com repo (the pre-commit hook below reminds you, and [MIGRATION.md](MIGRATION.md) is a copy-paste snapshot to make that easier).
+Since November 2026 the job-joseph.com repo's `src/lib/noticeboard/` is the source of truth for the data layer (edit keys, batch posting). This repo's `src/lib/` and [MIGRATION.md](MIGRATION.md) are older snapshots; the pre-commit hook below still reminds you about the mirror if you change them.
 
 **Note sizing targets** (max-width per type, for visual consistency on the board):
 
